@@ -1,0 +1,17 @@
+steps:
+- name: "gcr.io/cloud-builders/docker"
+  args:
+  - build
+  - "."
+  - "--tag=gcr.io/ringvold/teamsort"
+  - "--file=./docker/deploy/Dockerfile"
+  - "--build-arg"
+  - "KEY_BASE=ZxdcrkNjImjtIJlDLU9W7E0okdm2r8MWP4DpoiMMUKBvrp6GmjC8xHM/xtxPajro"
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/ringvold/teamsort']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'teamsort', '--image', 'gcr.io/ringvold/teamsort', '--region', 'europe-north1', '--platform', 'managed']
+images:
+- gcr.io/ringvold/teamsort
