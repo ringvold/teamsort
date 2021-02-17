@@ -17,19 +17,19 @@ defmodule TeamsortWeb.Components.Teamsort do
   def render(assigns) do
     ~H"""
     <section class="form">
-      <Form for={{ :players }} submit="solve" change="change" opts={{ autocomplete: "off" }}>
+      <Form for={{ :players }} submit="solve" change="change" opts={{ autocomplete: "off", "disable-with": "Generating teams..."  }}>
         <div class="field">
-          <Label class="label">Players</Label>
+          <Label class="label">Players <button class="button is-small" :on-capture-click="fill_example">Use example data</button></Label>
           <TextArea
             class="textarea has-text-light"
             rows="10"
             value={{ @players_raw }}
-            opts={{ placeholder: "Example:\nl0lpalme,12\nMadde,mg2,12"}}
+            opts={{ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}}
             ></TextArea>
         </div>
         <div class="field">
           <div class="control">
-            <button class="button id-primary">Make teams</button>
+            <button class="button id-primary" >Make teams</button>
           </div>
         </div>
       </Form>
@@ -55,6 +55,30 @@ defmodule TeamsortWeb.Components.Teamsort do
       <pre>@history = {{ Jason.encode!(@players_history, pretty: true) }}</pre>
     </section>
     """
+  end
+
+  def handle_event("fill_example", _value, socket) do
+    {:noreply,
+     assign(socket,
+       players_raw: """
+       antorn3dthe7th\ts2.\t0\t2
+       bna-cooky\ts3.\t0\t3
+       Buððah\tgn2.\t0\t8
+       Dinogutten\ts2.\t0\t2
+       eask64\tmg2.\t0\t12
+       l0lpalme\tmg1.\t1\t11
+       Madde\tmg1.\t1\t11
+       McDuckian\tmg1.\t0\t11
+       Miksern\tgn3.\t0\t9
+       Pokelot\tle\t0\t15
+       SchousKanser\ts2.\t0\t2
+       Steffe\tmg1.\t0\t11
+       Ditlesen\tsup\t0\t17
+       Jessie Maye\tse\t1\t5
+       Igorrr\tdmg\t0\t14
+       HVaade\tmge\t0\t13
+       """
+     )}
   end
 
   def handle_event("change", value, socket) do
