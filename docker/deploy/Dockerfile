@@ -29,6 +29,7 @@ RUN mix release
 FROM minizinc/minizinc:latest-alpine AS minizinc
 
 FROM bitwalker/alpine-elixir:latest
+LABEL org.opencontainers.image.source https://github.com/ringvold/teamsort
 
 EXPOSE 4000 443
 ENV PORT=4000 MIX_ENV=prod

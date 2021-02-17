@@ -1,14 +1,6 @@
 version: "3"
 
 services:
-  db:
-    image: postgres:12-alpine
-    environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
-    ports:
-      - 5432:5432
-    volumes:
-      - db-data:/var/lib/postgresql/data
   web:
     build: .
     command: mix phx.server
@@ -21,8 +13,6 @@ services:
       # - node_modules:/opt/app/assets/node_modules
     ports:
       - "4000:4000"
-    depends_on:
-      - db
     stdin_open: true
     tty: true
 
