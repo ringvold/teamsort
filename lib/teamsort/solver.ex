@@ -1,4 +1,5 @@
 defmodule Teamsort.Solver do
+  
   @spec solve([Player]) :: [any()]
   def solve(players) do
     result = run_solver(players)

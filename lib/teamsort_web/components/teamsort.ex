@@ -33,20 +33,19 @@ defmodule TeamsortWeb.Components.Teamsort do
           </div>
         </div>
       </Form>
-
       <section class="section">
         <h1 class="title">Teams</h1>
         <div class="block"><button class="button" :on-click="shuffle">Shuffle</button></div>
         <div class="columns">
           <div class="column" :for={{ team <- @teams }} >
             <div class="box content">
-            <h3 class="is-size-4">{{team.name}}</h3>
-            <span class="block">Score: {{team.score}}</span>
-            <ol>
-              <li :for={{ player <- team.players }}>
-                {{player.name}} {{player.rank_name }} {{player.team}} {{player.rank}}
-              </li>
-            </ol>
+              <h3 class="is-size-4">{{team.name}}</h3>
+              <span class="block">Score: {{team.score}}</span>
+              <ol>
+                <li :for={{ player <- team.players }}>
+                  {{player.name}} {{player.rank_name }} {{player.team}} {{player.rank}}
+                </li>
+              </ol>
             </div>
           </div>
         </div>
