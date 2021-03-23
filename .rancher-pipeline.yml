@@ -13,7 +13,7 @@ stages:
         - master
       event:
         include:
-        - tag
+        - push
 - name: Deploy
   steps:
   - applyYamlConfig:
