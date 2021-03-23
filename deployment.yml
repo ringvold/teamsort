@@ -10,9 +10,6 @@ spec:
   strategy:
     type: Recreate
   template:
-    metadata:
-      labels:
-        app: teamsort
     spec:
       containers:
         - name: teamsort
