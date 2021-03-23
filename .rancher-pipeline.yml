@@ -8,19 +8,16 @@ stages:
       pushRemote: true
       registry: ghcr.io
     when:
-      branch:
-        include:
-        - master
-      event:
-        include:
-        - push
+      branch: {}
+      event: {}
 - name: Deploy
   steps:
   - applyYamlConfig:
       path: ./deployment.yml
     when:
-      branch:
-        include:
-        - master
+      branch: {}
 timeout: 60
+branch:
+  include:
+  - master
 notification: {}
