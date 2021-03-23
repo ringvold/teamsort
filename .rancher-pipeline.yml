@@ -1,0 +1,22 @@
+stages:
+- name: Build
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./docker/deploy/Dockerfile
+      buildContext: .
+      tag: ghcr.io/ringvold/teamsort
+      pushRemote: true
+      registry: ghcr.io
+    when:
+      branch:
+        include:
+        - master
+      event:
+        include:
+        - tag
+- name: Deploy
+  steps:
+  - applyYamlConfig:
+      path: ./deployment.yml
+timeout: 60
+notification: {}
