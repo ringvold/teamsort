@@ -7,9 +7,6 @@
 # General application configuration
 use Mix.Config
 
-config :teamsort,
-  ecto_repos: [Teamsort.Repo]
-
 # Configures the endpoint
 config :teamsort, TeamsortWeb.Endpoint,
   url: [host: "localhost"],

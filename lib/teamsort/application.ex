@@ -7,8 +7,6 @@ defmodule Teamsort.Application do
 
   def start(_type, _args) do
     children = [
-      # Start the Ecto repository
-      # Teamsort.Repo,
       # Start the Telemetry supervisor
       TeamsortWeb.Telemetry,
       # Start the PubSub system
