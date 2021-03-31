@@ -21,7 +21,7 @@ defmodule TeamsortWeb.Components.Teamsort do
         <div class="field">
           <Label class="label">Players <button class="button is-small" :on-capture-click="fill_example">Use example data</button></Label>
           <TextArea
-            class="textarea has-text-light"
+            class="textarea"
             rows="10"
             value={{ @players_raw }}
             opts={{ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}}
