@@ -39,7 +39,6 @@ defmodule Teamsort.PlayerParserTest do
            Player2\tmg2\t12
            Player3\tgn4\t1\t9\n\n
            Player\t10
-
            """) == [
              %Player{name: "Player", rank: 10},
              %Player{name: "Player1", rank_name: "mg2", team: 2, rank: 10},
@@ -47,5 +46,14 @@ defmodule Teamsort.PlayerParserTest do
              %Player{name: "Player3", rank: 9, rank_name: "gn4", team: 1},
              %Player{name: "Player", rank: 10}
            ]
+  end
+
+  test "parses with space" do
+    assert parse("sandesh, 18\nbna, gn2, 8\nPlayer3\t gn4\t1 \t9") == [
+             %Player{name: "sandesh", rank: 18},
+             %Player{name: "bna", rank_name: "gn2", rank: 8},
+             %Player{name: "Player3", rank: 9, rank_name: "gn4", team: 1},
+           ]
+
   end
 end

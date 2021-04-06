@@ -5,34 +5,45 @@ defmodule TeamsortWeb.Components.Teamsort do
   alias Teamsort.Player
   alias Teamsort.PlayerParser
 
+  import Ecto.Changeset
+
   alias Surface.Components.Form.TextArea
   alias Surface.Components.Form.Label
+  alias Surface.Components.Form.ErrorTag
+  alias Surface.Components.Form.Field
   alias Surface.Components.Form
+
+  alias TeamsortWeb.PlayersForm
 
   data(players, :list, default: [])
   data(players_raw, :string, default: "")
   data(teams, :list, default: [])
   data(players_history, :list, default: [])
+  data(changeset, :changeset, default: %Ecto.Changeset{data: %PlayersForm{}})
 
   def render(assigns) do
     ~H"""
+    <!-- Form -->
     <section class="form">
-      <Form for={{ :players }} submit="solve" change="change" opts={{ autocomplete: "off", "disable-with": "Generating teams..."  }}>
-        <div class="field">
+      <Form for={{ @changeset }} submit="solve" change="change" opts={{ as: "changeset", autocomplete: "off" }}>
+        <Field class="field" name="players">
           <Label class="label">Players <button class="button is-small" :on-capture-click="fill_example">Use example data</button></Label>
           <TextArea
             class="textarea"
             rows="10"
-            value={{ @players_raw }}
+            value={{  @players_raw }}
             opts={{ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}}
             ></TextArea>
-        </div>
+          <ErrorTag />
+        </Field>
         <div class="field">
           <div class="control">
-            <button class="button id-primary" >Make teams</button>
+            <button class="button id-primary" phx-disable-with="Generating teams.." >Make teams</button>
           </div>
         </div>
       </Form>
+
+      <!-- Teams output -->
       <section class="section">
         <h1 class="title">Teams</h1>
         <div class="block"><button class="button" :on-click="shuffle">Shuffle</button></div>
@@ -50,10 +61,93 @@ defmodule TeamsortWeb.Components.Teamsort do
           </div>
         </div>
       </section>
-      <!--<pre>@teams = {{ #Jason.encode!(@teams, pretty: true) }}</pre>-->
+
+      <!-- History -->
       <pre>@history = {{ Jason.encode!(@players_history, pretty: true) }}</pre>
     </section>
     """
+  end
+
+  defp changeset(changeset, attrs) do
+    changeset
+      |> cast(attrs, [:players])
+      |> validate_required([:players])
+  end
+
+  def handle_event("change", %{ "changeset" => form }, socket) do
+    cset = changeset(%PlayersForm{}, form)
+
+    case cset.valid? do
+      true ->
+        case parse_players(get_field(cset, :players)) do
+          {:ok, players} ->
+            {:noreply,
+            assign(socket,
+              players: players,
+              players_raw: get_field(cset, :players),
+              changeset: cset
+            )}
+
+          {:error, _error} ->
+            {:noreply,
+              assign(socket,
+                changeset: add_error(cset, :players, "invalid input")
+              )}
+        end
+
+
+      false ->
+         {:noreply,
+            assign(socket,
+              changeset: cset
+            )}
+    end
+  end
+
+  def handle_event("shuffle", _value, socket) do
+    shuffled =
+      socket.assigns.players_raw |> String.split("\n") |> Enum.shuffle() |> Enum.join("\n")
+
+    updated_socket = update(socket, :players_history, &[shuffled | &1])
+
+    if shuffled != "" do
+      case parse_players(shuffled) do
+        {:ok, players} ->
+          teams = Solver.solve(players)
+          {:noreply, assign(updated_socket, players_raw: shuffled, teams: teams)}
+
+        {:error, _error} ->
+          {:noreply,
+              assign(socket,
+                changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
+              )}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("solve", %{ "changeset" => form }, socket) do
+    cset = changeset(%PlayersForm{}, form)
+    if cset.valid? do
+      case parse_players(get_field(cset,:players)) do
+        {:ok, [] } ->
+          {:noreply,
+            assign(socket,
+                changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
+              )
+          }
+
+        {:ok, players } ->
+          teams = Solver.solve(players)
+          {:noreply, assign(socket, teams: teams)}
+
+        {:error, _message} ->
+          {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("fill_example", _value, socket) do
@@ -80,61 +174,22 @@ defmodule TeamsortWeb.Components.Teamsort do
      )}
   end
 
-  def handle_event("change", value, socket) do
-    case parse_textarea(value["players"]) do
-      {:ok, players, _rest, _, _, _} ->
-        {:noreply,
-         assign(socket,
-           players: players,
-           players_raw: List.first(value["players"])
-         )}
-
-      {:error, _something, _rest, _, _, _} ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("shuffle", _value, socket) do
-    shuffled =
-      socket.assigns.players_raw |> String.split("\n") |> Enum.shuffle() |> Enum.join("\n")
-
-    updated_socket = update(socket, :players_history, &[shuffled | &1])
-
-    case parse_textarea([shuffled]) do
-      {:ok, players, _rest, _, _, _} ->
-        teams = Solver.solve(players)
-        {:noreply, assign(updated_socket, players_raw: shuffled, teams: teams)}
-
-      {:error, _something, _rest, _, _, _} ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("solve", value, socket) do
-    if List.first(value["players"]) do
-      case parse_textarea(value["players"]) do
-        {:ok, players, _rest, _, _, _} ->
-          teams = Solver.solve(players)
-          {:noreply, assign(socket, teams: teams)}
-
-        {:error, _something, _rest, _, _, _} ->
-          {:noreply, socket}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
-
-  @spec parse_textarea(any) :: {:error, String.t()} | {:ok, [Player]}
-  def parse_textarea(value) do
+  @spec parse_players(any) :: {:ok, [Player]} | {:error, String.t()}
+  def parse_players(value) do
     try do
       value
-      |> List.first()
       |> PlayerParser.parse()
-    catch
-      x ->
-        IO.puts(x)
-        {:error, "Could not parse players. Got #{x}"}
+      |> unwrap
+    rescue
+      e in RuntimeError ->
+        IO.puts("ERROR")
+        IO.puts(e)
+        {:error, "Could not parse players. Got #{e}"}
     end
   end
+
+  defp unwrap({:ok, players, "", _, _, _}), do: {:ok, players }
+  defp unwrap({:ok, _, rest, _, _, _}), do: {:error, "could not parse " <> rest}
+  defp unwrap({:error, reason, _rest, _, _, _}), do: {:error, reason}
+
 end

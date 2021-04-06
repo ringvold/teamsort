@@ -34,6 +34,8 @@ defmodule Teamsort.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.5.7"},
+      {:ecto_sql, "~> 3.0"},
+      {:phoenix_ecto, "~> 4.2"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_live_view, "~> 0.15.0"},
       {:floki, ">= 0.27.0", only: :test},

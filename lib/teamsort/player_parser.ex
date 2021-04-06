@@ -5,36 +5,52 @@ defmodule Teamsort.PlayerParser do
 
   player =
     utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(string("\n") |> repeat() |> optional())
     |> reduce({:construct_player, []})
 
   with_rankname =
     utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(string("\n") |> repeat() |> optional())
     |> reduce({:construct_player, []})
 
+
   with_rankname_and_team =
     utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
+    |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
+    |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(string("\n") |> repeat() |> optional())
     |> reduce({:construct_player, []})
 
   defparsec(
     :parse,
     choice([
-      with_rankname_and_team,
       player,
+      with_rankname_and_team,
       with_rankname
     ])
     |> repeat()
@@ -50,6 +66,9 @@ defmodule Teamsort.PlayerParser do
 
       [name, rank] ->
         %Player{name: name, rank: rank}
+
+      _ ->
+        {:error, "Could not convert #{args} to player"}
     end
   end
 end
