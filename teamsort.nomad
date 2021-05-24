@@ -64,8 +64,8 @@ job "teamsort" {
       # Specify the maximum resources required to run the task,
       # include CPU and memory.
       resources {
-        cpu    = 500 # MHz
-        memory = 256 # MB
+        cpu    = 1000 # MHz
+        memory = 500 # MB
       }
     }
   }
