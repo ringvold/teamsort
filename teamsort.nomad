@@ -26,13 +26,8 @@ job "teamsort" {
       # This requests a dynamic port named "http". This will
       # be something like "46283", but we refer to it via the
       # label "http".
-      port "http" {}
-
-      # This requests a static port on 443 on the host. This
-      # will restrict this task to running once per host, since
-      # there is only one port 443 on each host.
-      port "https" {
-        static = 443
+      port "http" {
+          to = 4000
       }
     }
 
@@ -57,12 +52,12 @@ job "teamsort" {
     task "teamsort" {
       # Specify the driver to be "docker". Nomad supports
       # multiple drivers.
-      driver = "podman"
+      driver = "docker"
 
       # Configuration is specific to each driver.
       config {
         image = "ghcr.io/ringvold/teamsort:latest"
-        ports = ["http", "https"]
+        ports = ["http"]
       }
 
 
@@ -70,7 +65,7 @@ job "teamsort" {
       # include CPU and memory.
       resources {
         cpu    = 500 # MHz
-        memory = 128 # MB
+        memory = 256 # MB
       }
     }
   }
