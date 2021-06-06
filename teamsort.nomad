@@ -27,7 +27,7 @@ job "teamsort" {
       # be something like "46283", but we refer to it via the
       # label "http".
       port "http" {
-          to = 4000
+          to = -1
       }
     }
 
@@ -39,9 +39,15 @@ job "teamsort" {
       # numbers, we use labels to refer to them.
       port = "http"
 
+      tags = [
+        "traefik.enable=true",
+        "traefik.http.routers.http.rule=Host(`teamsort.harald.io`)",
+        "traefik.http.routers.https.rule=Host(`teamsort.harald.io`)",
+
+      ]
       check {
         type     = "http"
-        path     = "/health"
+        path     = "/"
         interval = "10s"
         timeout  = "2s"
       }
@@ -50,6 +56,10 @@ job "teamsort" {
     # Create an individual task (unit of work). This particular
     # task utilizes a Docker container to front a web application.
     task "teamsort" {
+      env {
+        PORT    = "${NOMAD_PORT_http}"
+      }
+
       # Specify the driver to be "docker". Nomad supports
       # multiple drivers.
       driver = "docker"
