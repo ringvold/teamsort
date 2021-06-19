@@ -3,6 +3,11 @@ job "teamsort" {
   # Spread the tasks in this job between us-west-1 and us-east-1.
   datacenters = ["dc1"]
 
+  spread {
+    attribute = "${node.datacenter}"
+    weight    = 50
+  }
+
   # Run this job as a "service" type. Each job type has different
   # properties. See the documentation below for more examples.
   type = "service"
@@ -41,8 +46,8 @@ job "teamsort" {
 
       tags = [
         "traefik.enable=true",
-        "traefik.http.routers.http.rule=Host(`teamsort.harald.io`)",
-        "traefik.http.routers.https.rule=Host(`teamsort.harald.io`)",
+        "traefik.http.routers.teamsort_http.rule=Host(`teamsort.harald.io`)",
+        "traefik.http.routers.teamsort_https.rule=Host(`teamsort.harald.io`)",
 
       ]
       check {
