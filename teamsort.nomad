@@ -4,8 +4,8 @@ job "teamsort" {
   datacenters = ["dc1"]
 
   spread {
-    attribute = "${node.datacenter}"
-    weight    = 50
+    attribute = "${node.unique.name}"
+    weight    = 100
   }
 
   # Run this job as a "service" type. Each job type has different
