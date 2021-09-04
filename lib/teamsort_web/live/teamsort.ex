@@ -1,4 +1,4 @@
-defmodule TeamsortWeb.Components.Teamsort do
+defmodule TeamsortWeb.Teamsort do
   use Surface.LiveComponent
 
   alias Teamsort.Solver
@@ -23,7 +23,6 @@ defmodule TeamsortWeb.Components.Teamsort do
 
   def render(assigns) do
     ~F"""
-    <!-- Form -->
     <section class="form">
       <Form for={ @changeset } submit="solve" change="change" opts={ as: "changeset", autocomplete: "off" }>
         <Field class="field" name={ :players }>
@@ -43,7 +42,7 @@ defmodule TeamsortWeb.Components.Teamsort do
         </div>
       </Form>
 
-      <!-- Teams output -->
+      {!-- Teams output --}
       <section class="section">
         <h1 class="title">Teams</h1>
         <div class="block"><button class="button" :on-click="shuffle">Shuffle</button></div>
@@ -62,7 +61,7 @@ defmodule TeamsortWeb.Components.Teamsort do
         </div>
       </section>
 
-      <!-- History -->
+      {!-- History --}
       <pre>@history = { Jason.encode!(@players_history, pretty: true) }</pre>
     </section>
     """

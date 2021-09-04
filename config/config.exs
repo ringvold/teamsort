@@ -15,6 +15,10 @@ config :teamsort, TeamsortWeb.Endpoint,
   pubsub_server: Teamsort.PubSub,
   live_view: [signing_salt: "96PXDW+A"]
 
+config :surface, :components, [
+  {Surface.Components.Form.ErrorTag, default_translator: {TeamsortWeb.ErrorHelpers, :translate_error}}
+]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

@@ -1,7 +1,7 @@
 defmodule TeamsortWeb.App do
   use Surface.LiveView
 
-  alias TeamsortWeb.Components.Teamsort
+  alias TeamsortWeb.Teamsort
 
   def render(assigns) do
     ~F"""

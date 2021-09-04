@@ -17,7 +17,7 @@ defmodule TeamsortWeb.Endpoint do
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [
       connect_info: [session: @session_options],
-      check_origin: ["//teamsort.harald.io", "https://teamsort.fly.dev"]
+      check_origin: ["//teamsort.harald.io", "https://teamsort.fly.dev", "http://localhost:4000"]
     ]
 
   # Serve at "/" the static files from "priv/static" directory.
