@@ -22,17 +22,17 @@ defmodule TeamsortWeb.Components.Teamsort do
   data(changeset, :changeset, default: %Ecto.Changeset{data: %PlayersForm{}})
 
   def render(assigns) do
-    ~H"""
+    ~F"""
     <!-- Form -->
     <section class="form">
-      <Form for={{ @changeset }} submit="solve" change="change" opts={{ as: "changeset", autocomplete: "off" }}>
-        <Field class="field" name="players">
+      <Form for={ @changeset } submit="solve" change="change" opts={ as: "changeset", autocomplete: "off" }>
+        <Field class="field" name={ :players }>
           <Label class="label">Players <button class="button is-small" :on-capture-click="fill_example">Use example data</button></Label>
           <TextArea
             class="textarea"
             rows="10"
-            value={{  @players_raw }}
-            opts={{ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}}
+            value={ @players_raw }
+            opts={ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}
             ></TextArea>
           <ErrorTag />
         </Field>
@@ -48,13 +48,13 @@ defmodule TeamsortWeb.Components.Teamsort do
         <h1 class="title">Teams</h1>
         <div class="block"><button class="button" :on-click="shuffle">Shuffle</button></div>
         <div class="columns">
-          <div class="column" :for={{ team <- @teams }} >
+          <div class="column" :for={ team <- @teams } >
             <div class="box content">
-              <h3 class="is-size-4">{{team.name}}</h3>
-              <span class="block">Score: {{team.score}}</span>
+              <h3 class="is-size-4">{ team.name }</h3>
+              <span class="block">Score: { team.score }</span>
               <ol>
-                <li :for={{ player <- team.players }}>
-                  {{player.name}} {{player.rank_name }} {{player.team}} {{player.rank}}
+                <li :for={ player <- team.players }>
+                  { player.name } { player.rank_name } { player.team } { player.rank }
                 </li>
               </ol>
             </div>
@@ -63,7 +63,7 @@ defmodule TeamsortWeb.Components.Teamsort do
       </section>
 
       <!-- History -->
-      <pre>@history = {{ Jason.encode!(@players_history, pretty: true) }}</pre>
+      <pre>@history = { Jason.encode!(@players_history, pretty: true) }</pre>
     </section>
     """
   end

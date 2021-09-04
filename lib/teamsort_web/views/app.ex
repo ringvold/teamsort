@@ -4,7 +4,7 @@ defmodule TeamsortWeb.App do
   alias TeamsortWeb.Components.Teamsort
 
   def render(assigns) do
-    ~H"""
+    ~F"""
     <div class="section">
       <Teamsort id="teamsort"></Teamsort>
     </div>

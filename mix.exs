@@ -48,7 +48,7 @@ defmodule Teamsort.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:solverl, ">= 1.0.0"},
-      {:surface, "~> 0.1.0"},
+      {:surface, "~> 0.5.0"},
       {:nimble_parsec, "~> 1.1.0"}
     ]
   end
