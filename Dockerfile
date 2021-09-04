@@ -1,27 +1,85 @@
-FROM elixir:latest
+######
+### Fist Stage - Building the Release
+###
+FROM hexpm/elixir:1.12.1-erlang-24.0.1-alpine-3.13.3 AS build
 
-# Install minizinc
-RUN mkdir /opt/minizinc && \
-    wget --quiet https://github.com/MiniZinc/MiniZincIDE/releases/download/2.5.3/MiniZincIDE-2.5.3-bundle-linux-x86_64.tgz && \
-    tar -xf MiniZincIDE-2.5.3-bundle-linux-x86_64.tgz  -C /opt/minizinc/
-ENV PATH=/opt/minizinc/MiniZincIDE-2.5.3-bundle-linux-x86_64/bin:$PATH
+# install build dependencies
+RUN apk add --no-cache build-base npm
 
-# Install phoenix deps
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt-get install -y postgresql-client && \
-    apt-get install -y inotify-tools && \
-    apt-get install -y nodejs
+# prepare build dir
+WORKDIR /app
 
-ENV APP_HOME=/opt/app SHELL=/bin/bash
-RUN mkdir $APP_HOME
-WORKDIR $APP_HOME
+# extend hex timeout, SHELL needs to be set to start the app
+ENV HEX_HTTP_TIMEOUT=20 \
+    SHELL=/bin/bash HOST_NAME=localhost
 
-# Phoenix cant run as root apparently
-RUN useradd -rm -d /home/ubuntu -s /bin/bash -u 1000 ubuntu
-USER ubuntu
-
+# install hex + rebar
 RUN mix local.hex --force && \
-    mix archive.install hex phx_new 1.5.3 --force && \
     mix local.rebar --force
 
-CMD ["mix", "phx.server"]
+# set build ENV as prod
+ENV MIX_ENV=prod
+ENV SECRET_KEY_BASE=nokey
+
+# Copy over the mix.exs and mix.lock files to load the dependencies. If those
+# files don't change, then we don't keep re-fetching and rebuilding the deps.
+COPY mix.exs mix.lock ./
+COPY config config
+
+RUN mix deps.get --only prod && \
+    mix deps.compile
+
+# install npm dependencies
+COPY assets/package.json assets/package-lock.json ./assets/
+RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
+
+COPY priv priv
+COPY assets assets
+
+# NOTE: If using TailwindCSS, it uses a special "purge" step and that requires
+# the code in `lib` to see what is being used. Uncomment that here before
+# running the npm deploy script if that's the case.
+# COPY lib lib
+
+# build assets
+RUN npm run --prefix ./assets deploy
+RUN mix phx.digest
+
+# copy source here if not using TailwindCSS
+COPY lib lib
+
+# compile and build release
+COPY rel rel
+RUN mix do compile, release
+
+
+###
+### Second Stage - Setup the Runtime Environment
+###
+
+FROM minizinc/minizinc:latest-alpine AS minizinc
+
+
+# prepare release docker image
+FROM alpine:3.13.3 AS app
+RUN apk add --no-cache openssl ncurses-libs libc6-compat libstdc++
+
+WORKDIR /app
+
+RUN chown nobody:nobody /app
+
+USER nobody:nobody
+
+
+COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/teamsort ./
+
+COPY --from=minizinc /usr/local/bin/minizinc /usr/local/bin/minizinc
+COPY --from=minizinc /usr/local/share/minizinc /usr/local/share/minizinc
+
+ENV HOME=/app
+ENV MIX_ENV=prod
+ENV SECRET_KEY_BASE=nokey
+ENV PORT=4000
+ENV SHELL=/bin/sh HOST_NAME=localhost
+
+CMD ["bin/teamsort", "start"]
