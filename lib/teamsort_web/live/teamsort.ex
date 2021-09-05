@@ -47,17 +47,21 @@ defmodule TeamsortWeb.Teamsort do
         <h1 class="title">Teams</h1>
         <div class="block"><button class="button" :on-click="shuffle">Shuffle</button></div>
         <div class="columns">
-          <div class="column" :for={ team <- @teams } >
-            <div class="box content">
-              <h3 class="is-size-4">{ team.name }</h3>
-              <span class="block">Score: { team.score }</span>
-              <ol>
-                <li :for={ player <- team.players }>
-                  { player.name } { player.rank_name } { player.team } { player.rank }
-                </li>
-              </ol>
+          {#for team <- @teams }
+            <div class="column">
+              <div class="box content">
+                <h3 class="is-size-4">{ team.name }</h3>
+                <span class="block">Score: { team.score }</span>
+                <ol>
+                  {#for player <- team.players }
+                  <li>
+                    { player.name } { player.rank_name } { player.team } { player.rank }
+                  </li>
+                  {/for}
+                </ol>
+              </div>
             </div>
-          </div>
+          {/for}
         </div>
       </section>
 
@@ -69,11 +73,11 @@ defmodule TeamsortWeb.Teamsort do
 
   defp changeset(changeset, attrs) do
     changeset
-      |> cast(attrs, [:players])
-      |> validate_required([:players])
+    |> cast(attrs, [:players])
+    |> validate_required([:players])
   end
 
-  def handle_event("change", %{ "changeset" => form }, socket) do
+  def handle_event("change", %{"changeset" => form}, socket) do
     cset = changeset(%PlayersForm{}, form)
 
     case cset.valid? do
@@ -81,25 +85,64 @@ defmodule TeamsortWeb.Teamsort do
         case parse_players(get_field(cset, :players)) do
           {:ok, players} ->
             {:noreply,
-            assign(socket,
-              players: players,
-              players_raw: get_field(cset, :players),
-              changeset: cset
-            )}
+             assign(socket,
+               players: players,
+               players_raw: get_field(cset, :players),
+               changeset: cset
+             )}
 
           {:error, _error} ->
             {:noreply,
-              assign(socket,
-                changeset: add_error(cset, :players, "invalid input")
-              )}
+             assign(
+               socket
+               |> put_flash(:info, "test"),
+               changeset: add_error(cset, :players, "invalid input")
+             )}
         end
 
-
       false ->
-         {:noreply,
-            assign(socket,
-              changeset: cset
-            )}
+        {:noreply,
+         assign(socket,
+           changeset: cset
+         )}
+    end
+  end
+
+  def handle_event("solve", %{"changeset" => form}, socket) do
+    cset = changeset(%PlayersForm{}, form)
+
+    if cset.valid? do
+      case parse_players(get_field(cset, :players)) do
+        {:ok, []} ->
+          {:noreply,
+           assign(socket,
+             changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
+           )}
+
+        {:ok, players} ->
+          # case Solver.solve(players) do
+          #   {:ok, teams} ->
+          #     {:noreply, assign(socket, teams: teams)}
+
+          #   {:error, _error} ->
+          #     {:noreply,
+          #      assign(socket,
+          #        changeset:
+          #          add_error(socket.assigns.changeset, :players, "could not create teams")
+          #      )}
+          # end
+
+          {:ok, teams} = Solver.solve(players)
+          {:noreply, assign(socket, teams: teams)}
+
+        {:error, _message} ->
+          {:noreply,
+           assign(socket,
+             changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
+           )}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
@@ -107,42 +150,19 @@ defmodule TeamsortWeb.Teamsort do
     shuffled =
       socket.assigns.players_raw |> String.split("\n") |> Enum.shuffle() |> Enum.join("\n")
 
-    updated_socket = update(socket, :players_history, &[shuffled | &1])
-
     if shuffled != "" do
+      updated_socket = update(socket, :players_history, &[shuffled | &1])
+
       case parse_players(shuffled) do
         {:ok, players} ->
-          teams = Solver.solve(players)
+          {:ok, teams} = Solver.solve(players)
           {:noreply, assign(updated_socket, players_raw: shuffled, teams: teams)}
 
         {:error, _error} ->
           {:noreply,
-              assign(socket,
-                changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
-              )}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_event("solve", %{ "changeset" => form }, socket) do
-    cset = changeset(%PlayersForm{}, form)
-    if cset.valid? do
-      case parse_players(get_field(cset,:players)) do
-        {:ok, [] } ->
-          {:noreply,
-            assign(socket,
-                changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
-              )
-          }
-
-        {:ok, players } ->
-          teams = Solver.solve(players)
-          {:noreply, assign(socket, teams: teams)}
-
-        {:error, _message} ->
-          {:noreply, socket}
+           assign(socket,
+             changeset: add_error(socket.assigns.changeset, :players, "could not be parsed")
+           )}
       end
     else
       {:noreply, socket}
@@ -187,8 +207,7 @@ defmodule TeamsortWeb.Teamsort do
     end
   end
 
-  defp unwrap({:ok, players, "", _, _, _}), do: {:ok, players }
+  defp unwrap({:ok, players, "", _, _, _}), do: {:ok, players}
   defp unwrap({:ok, _, rest, _, _, _}), do: {:error, "could not parse " <> rest}
   defp unwrap({:error, reason, _rest, _, _, _}), do: {:error, reason}
-
 end

@@ -20,6 +20,8 @@
           </p>
         </div>
     </section>
+    <p class="alert alert-info"><%= live_flash(@flash, :info) %></p>
+<p class="alert alert-danger"><%= live_flash(@flash, :error) %></p>
     <%= @inner_content %>
   </body>
 </html>

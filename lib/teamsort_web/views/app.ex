@@ -10,6 +10,4 @@ defmodule TeamsortWeb.App do
     </div>
     """
   end
-
-
 end

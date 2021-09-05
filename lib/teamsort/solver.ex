@@ -1,10 +1,16 @@
 defmodule Teamsort.Solver do
-  
-  @spec solve([Player]) :: [any()]
+  @spec solve([Player]) :: {:ok, [Team]} | {:error, binary()}
   def solve(players) do
     result = run_solver(players)
     IO.inspect(result)
-    result_to_teams(players, result)
+
+    case result do
+      {:error, _} ->
+        result
+
+      _ ->
+        {:ok, result_to_teams(players, result)}
+    end
   end
 
   @spec run_solver([Player]) :: {:ok, any()} | {:error, any()}
