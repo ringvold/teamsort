@@ -3,66 +3,50 @@ defmodule Teamsort.PlayerParser do
 
   alias Teamsort.Player
 
+  comma = 44
+  tab = 9
+  new_line = 10
+
   player =
-    utf8_string([{:not, 44}, {:not, 9}], min: 1)
+    utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
     |> ignore(string(" ") |> repeat() |> optional())
-    |> integer(min: 1)
+    |> utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(string("\n") |> repeat() |> optional())
-    |> reduce({:construct_player, []})
-
-  with_rankname =
-    utf8_string([{:not, 44}, {:not, 9}], min: 1)
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(choice([string(","), string("\t")]))
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> utf8_string([{:not, 44}, {:not, 9}], min: 1)
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(choice([string(","), string("\t")]))
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> integer(min: 1)
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(string("\n") |> repeat() |> optional())
+    |> ignore(string("\t")|> repeat() |> optional())
+    |> ignore(string("\n")|> repeat() |> optional())
     |> reduce({:construct_player, []})
 
 
-  with_rankname_and_team =
-    utf8_string([{:not, 44}, {:not, 9}], min: 1)
+  with_team =
+    utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
     |> ignore(string(" ") |> repeat() |> optional())
-    |> utf8_string([{:not, 44}, {:not, 9}], min: 1)
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(choice([string(","), string("\t")]))
-    |> ignore(string(" ") |> repeat() |> optional())
-    |> integer(min: 1)
+    |> utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
     |> ignore(choice([string(","), string("\t")]))
     |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(string("\n") |> repeat() |> optional())
+    |> ignore(string("\t")|> repeat() |> optional())
+    |> ignore(string("\n")|> repeat() |> optional())
     |> reduce({:construct_player, []})
 
   defparsec(
     :parse,
     choice([
-      player,
-      with_rankname_and_team,
-      with_rankname
+      with_team,
+      player
     ])
     |> repeat()
   )
 
   defp construct_player(args) do
     case args do
-      [name, rank_name, team, rank] ->
-        %Player{name: name, rank: rank, rank_name: rank_name, team: team}
-
-      [name, rank_name, rank] ->
-        %Player{name: name, rank: rank, rank_name: rank_name}
+      [name, rank, team] ->
+        %Player{name: name, rank: rank, team: team}
 
       [name, rank] ->
         %Player{name: name, rank: rank}

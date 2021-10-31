@@ -31,7 +31,8 @@ defmodule TeamsortWeb.Teamsort do
             class="textarea"
             rows="10"
             value={ @players_raw }
-            opts={ placeholder: "Format:\nname, rank (1-18)\nname, rank name, rank\nname, rank name, team preference (number), rank"}
+            opts={ placeholder: "Format:\nname, rank\nname, team preference (number), rank\n
+    Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo"}
             ></TextArea>
           <ErrorTag />
         </Field>
@@ -55,7 +56,7 @@ defmodule TeamsortWeb.Teamsort do
                 <ol>
                   {#for player <- team.players }
                   <li>
-                    { player.name } { player.rank_name } { player.team } { player.rank }
+                    { player.name }  { player.team } { player.rank }
                   </li>
                   {/for}
                 </ol>
@@ -173,22 +174,22 @@ defmodule TeamsortWeb.Teamsort do
     {:noreply,
      assign(socket,
        players_raw: """
-       antorn3dthe7th\ts2.\t0\t2
-       bna-cooky\ts3.\t0\t3
-       Buððah\tgn2.\t0\t8
-       Dinogutten\ts2.\t0\t2
-       eask64\tmg2.\t0\t12
-       l0lpalme\tmg1.\t1\t11
-       Madde\tmg1.\t1\t11
-       McDuckian\tmg1.\t0\t11
-       Miksern\tgn3.\t0\t9
-       Pokelot\tle\t0\t15
-       SchousKanser\ts2.\t0\t2
-       Steffe\tmg1.\t0\t11
-       Ditlesen\tsup\t0\t17
-       Jessie Maye\tse\t1\t5
-       Igorrr\tdmg\t0\t14
-       HVaade\tmge\t0\t13
+       antorn3dthe7th\ts2\t0
+       bna-cooky\ts3\t0
+       Buððah\tgn2\t0
+       Dinogutten\ts2\t0
+       eask64\tmg2\t0
+       l0lpalme\tmg1\t1
+       Madde\tmg1\t1
+       McDuckian\tmg1\t0
+       Miksern\tgn3\t0
+       Pokelot\tle\t0
+       SchousKanser\ts2\t0
+       Steffe\tmg1\t0
+       Ditlesen\tsup\t0
+       Jessie Maye\tse\t1
+       Igorrr\tdmg\t0
+       HVaade\tmge\t0
        """
      )}
   end

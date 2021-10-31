@@ -1,24 +1,4 @@
-set of int: Rank = 1..18;
-array[Rank] of int: rankPower =
-    [ 8
-    , 9
-    , 10
-    , 11
-    , 12
-    , 13
-    , 14
-    , 15
-    , 16
-    , 17
-    , 18
-    , 19
-    , 20
-    , 21
-    , 22
-    , 23
-    , 24
-    , 25
-    ];
+enum Rank = { ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo };
 
 % Avoid recursive definition between noOfPlayers and rank
 % by defining the inputs in an array of unspecified size.

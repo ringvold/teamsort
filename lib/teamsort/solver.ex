@@ -20,6 +20,8 @@ defmodule Teamsort.Solver do
       %{
         playerRanks: Enum.map(players, & &1.rank),
         preference: Enum.map(players, & &1.team)
+        # rank:
+        #   "{ ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo }"
       },
       # TODO: make solver selectable
       solver: "org.minizinc.mip.coin-bc"
@@ -45,7 +47,7 @@ defmodule Teamsort.Solver do
 
   def players_to_team({number, numplay}) do
     players = Enum.map(numplay, fn {_num, p} -> p end)
-    sum = Enum.map(players, & &1.rank) |> Enum.sum()
+    sum = Enum.map(players, &Teamsort.Player.rank_to_num(&1.rank)) |> Enum.sum()
     %Team{name: "Team #{number}", players: Enum.sort_by(players, & &1.rank, :desc), score: sum}
   end
 
