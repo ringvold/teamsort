@@ -16,8 +16,17 @@ config :teamsort, TeamsortWeb.Endpoint,
   live_view: [signing_salt: "96PXDW+A"]
 
 config :surface, :components, [
-  {Surface.Components.Form.ErrorTag, default_translator: {TeamsortWeb.ErrorHelpers, :translate_error}}
+  {Surface.Components.Form.ErrorTag,
+   default_translator: {TeamsortWeb.ErrorHelpers, :translate_error}}
 ]
+
+config :esbuild,
+  version: "0.13.10",
+  default: [
+    args: ~w(js/app.js --bundle --target=es2016 --outdir=../priv/static/assets),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
 
 # Configures Elixir's Logger
 config :logger, :console,
