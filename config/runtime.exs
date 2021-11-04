@@ -12,9 +12,16 @@ if config_env() == :prod do
     System.get_env("FLY_APP_NAME") ||
       raise "FLY_APP_NAME not available"
 
+  url =
+    if System.get_env("FLY_ALLOC_ID") do
+      "#{app_name}.fly.dev"
+    else
+      "localhost"
+    end
+
   config :teamsort, TeamsortWeb.Endpoint,
     server: true,
-    url: [host: "#{app_name}.fly.dev", port: 80],
+    url: [host: url, port: 80],
     http: [
       port: String.to_integer(System.get_env("PORT") || "4000"),
       # IMPORTANT: support IPv6 addresses
