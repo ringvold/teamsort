@@ -2,13 +2,12 @@ defmodule Teamsort.Solver do
   @spec solve([Player]) :: {:ok, [Team]} | {:error, binary()}
   def solve(players) do
     result = run_solver(players)
-    IO.inspect(result)
 
     case result do
       {:error, _} ->
         result
 
-      _ ->
+      {:ok, result} ->
         {:ok, result_to_teams(players, result)}
     end
   end

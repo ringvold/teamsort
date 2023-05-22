@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -11,12 +11,10 @@ config :teamsort, TeamsortWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
+  secret_key_base: "6QTKVTAXzrFtuwsXk+gyaR1HDd+5mKEvbAeCkjIafOiSZgxcu9JHymizxR9byxvi",
   watchers: [
-    # Custom esbuild
-    node: ["esbuild.js", "--watch", cd: Path.expand("../assets", __DIR__)]
-
-    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    # esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -49,11 +47,13 @@ config :teamsort, TeamsortWeb.Endpoint,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/teamsort_web/(live|views)/.*(ex)$",
-      ~r"lib/teamsort_web/live/.*(sface)$",
-      ~r"lib/teamsort_web/templates/.*(eex)$"
+      ~r"lib/teamsort_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
+
+# Enable dev routes for dashboard and mailbox
+config :teamsort, dev_routes: true
+
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

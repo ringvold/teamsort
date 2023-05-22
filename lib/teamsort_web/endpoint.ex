@@ -7,7 +7,8 @@ defmodule TeamsortWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_teamsort_key",
-    signing_salt: "icMiSSh2"
+    signing_salt: "icMiSSh2",
+    same_site: "Lax"
   ]
 
   socket "/socket", TeamsortWeb.UserSocket,

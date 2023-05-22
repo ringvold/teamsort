@@ -5,7 +5,7 @@ defmodule TeamsortWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {TeamsortWeb.LayoutView, :root}
+    plug :put_root_layout, {TeamsortWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -17,7 +17,7 @@ defmodule TeamsortWeb.Router do
   scope "/", TeamsortWeb do
     pipe_through :browser
 
-    live "/", App
+    live "/", TeamsortLive
   end
 
   # Other scopes may use custom stacks.

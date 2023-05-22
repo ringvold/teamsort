@@ -5,27 +5,38 @@
 # is restricted to this project.
 
 # General application configuration
-use Mix.Config
+import Config
 
 # Configures the endpoint
 config :teamsort, TeamsortWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "pThGqHZqFtGTReyhp3JeTNCzQO2exm8IzagohpCrnrTHT04KcEMHlFcSUqVXx9iA",
-  render_errors: [view: TeamsortWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [
+    formats: [html: TeamsortWeb.ErrorHTML, json: TeamsortWeb.ErrorJSON],
+    layout: false
+  ],
   pubsub_server: Teamsort.PubSub,
   live_view: [signing_salt: "96PXDW+A"]
 
-config :surface, :components, [
-  {Surface.Components.Form.ErrorTag,
-   default_translator: {TeamsortWeb.ErrorHelpers, :translate_error}}
-]
-
+# Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.13.10",
+  version: "0.17.11",
   default: [
-    args: ~w(js/app.js --bundle --target=es2016 --outdir=../priv/static/assets),
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+
+# Configure tailwind (the version is required)
+config :tailwind,
+  version: "3.2.7",
+  default: [
+    args: ~w(
+      --config=tailwind.config.js
+      --input=css/app.css
+      --output=../priv/static/assets/app.css
+    ),
+    cd: Path.expand("../assets", __DIR__)
   ]
 
 # Configures Elixir's Logger
@@ -36,15 +47,6 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Configure esbuild (the version is required)
-# config :esbuild,
-#   version: "0.12.18",
-#   default: [
-#     args: ~w(js/app.js --bundle --target=es2016 --outdir=../priv/static/assets),
-#     cd: Path.expand("../assets", __DIR__),
-#     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-#   ]
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"
