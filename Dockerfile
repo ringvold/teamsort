@@ -1,76 +1,96 @@
+
+
+ARG ELIXIR_VERSION=1.14.4
+ARG OTP_VERSION=25.3.2
+ARG DEBIAN_VERSION=bullseye-20230227-slim
+
+ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+
+
 ######
 ### Fist Stage - Building the Release
 ###
-FROM hexpm/elixir:1.14.4-erlang-25.3-alpine-3.18.0 AS build
+# FROM hexpm/elixir:1.14.4-erlang-25.3.2-alpine-3.18.0 AS build
+FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
-RUN apk add --no-cache build-base npm
+RUN apt-get update -y && apt-get install -y build-essential git \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
 WORKDIR /app
-
-# extend hex timeout, SHELL needs to be set to start the app
-ENV HEX_HTTP_TIMEOUT=20 \
-    SHELL=/bin/bash HOST_NAME=localhost
 
 # install hex + rebar
 RUN mix local.hex --force && \
     mix local.rebar --force
 
-# set build ENV as prod
-ENV MIX_ENV=prod
-ENV SECRET_KEY_BASE=nokey
+# set build ENV
+ENV MIX_ENV="prod"
 
-# Copy over the mix.exs and mix.lock files to load the dependencies. If those
-# files don't change, then we don't keep re-fetching and rebuilding the deps.
+# install mix dependencies
 COPY mix.exs mix.lock ./
-COPY config config
+RUN mix deps.get --only $MIX_ENV
+RUN mkdir config
 
-RUN mix deps.get --only prod && \
-    mix deps.compile
+# copy compile-time config files before we compile dependencies
+# to ensure any relevant config change will trigger the dependencies
+# to be re-compiled.
+COPY config/config.exs config/${MIX_ENV}.exs config/
+RUN mix deps.compile
 
 COPY priv priv
-COPY assets assets
 
-# NOTE: If using TailwindCSS, it uses a special "purge" step and that requires
-# the code in `lib` to see what is being used. Uncomment that here before
-# running the npm deploy script if that's the case.
-# COPY lib lib
-
-# build assets
-RUN mix assets.deploy
-RUN mix phx.digest
-
-# copy source here if not using TailwindCSS
 COPY lib lib
 
-# compile and build release
-COPY rel rel
-RUN mix do compile, release
+COPY assets assets
 
+# compile assets
+RUN mix assets.deploy
+
+# Compile the release
+RUN mix compile
+
+# Changes to config/runtime.exs don't require recompiling the code
+COPY config/runtime.exs config/
+
+COPY rel rel
+RUN mix release
+
+
+# Fetch minizinc image so we can fetch precompiled version of minizinc
+FROM minizinc/minizinc:latest-jammy AS minizinc
 
 ###
 ### Second Stage - Setup the Runtime Environment
 ###
 
-FROM minizinc/minizinc:latest-alpine AS minizinc
+# start a new build stage so that the final image will only contain
+# the compiled release and other runtime necessities
+FROM ${RUNNER_IMAGE}
 
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-# prepare release docker image
-FROM alpine:3.13.3 AS app
-RUN apk add --no-cache openssl ncurses-libs libc6-compat libstdc++
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-WORKDIR /app
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
-RUN chown nobody:nobody /app
+WORKDIR "/app"
+RUN chown nobody /app
 
-USER nobody:nobody
+# set runner ENV
+ENV MIX_ENV="prod"
 
-
-COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/teamsort ./
+COPY --from=builder --chown=nobody:nobody /app/_build/${MIX_ENV}/rel/teamsort ./
 
 COPY --from=minizinc /usr/local/bin/minizinc /usr/local/bin/minizinc
 COPY --from=minizinc /usr/local/share/minizinc /usr/local/share/minizinc
+
+USER nobody
 
 ENV HOME=/app
 ENV MIX_ENV=prod
@@ -78,4 +98,10 @@ ENV SECRET_KEY_BASE=nokey
 ENV PORT=4000
 ENV SHELL=/bin/sh HOST_NAME=localhost
 
+# Appended by flyctl
+ENV ECTO_IPV6 true
+ENV ERL_AFLAGS "-proto_dist inet6_tcp"
+
 CMD ["bin/teamsort", "start"]
+
+

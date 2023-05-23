@@ -171,8 +171,8 @@ Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg
               {:noreply, assign(updated_socket, players_raw: shuffled, teams: teams)}
 
             {:error, :unexpected} ->
-          {:noreply, assign(updated_socket, players_raw: shuffled)}
-        end
+              {:noreply, socket}
+          end
 
         {:error, _error} ->
           {:noreply,
