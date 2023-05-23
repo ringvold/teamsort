@@ -22,6 +22,7 @@ defmodule TeamsortWeb.TeamsortLive do
 
   @impl true
   def render(assigns) do
+    # TODO: Alternative layout where textarea is tall and narrow with teams on the side
     ~H"""
     <section class="form">
       <.simple_form
@@ -31,7 +32,7 @@ defmodule TeamsortWeb.TeamsortLive do
         as="changeset"
         autocomplete="off">
 
-        <.button phx-click="fill_example">Use example data</.button>
+        <.button class="float-right mb-2" phx-click="fill_example">Use example data</.button>
 
         <.input
           field={@form[:players]}
@@ -39,8 +40,11 @@ defmodule TeamsortWeb.TeamsortLive do
           label="Players"
           value={ @players_raw }
           rows="10"
-          placeholder="Format:\nname, rank\nname, team preference (number), rank\n
-    Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo"
+          cols="30"
+          placeholder="Format:
+name, rank
+name, rank, team preference (number, 1-4)
+Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo"
         />
         <:actions>
           <.button phx-disable-with="Generating teams..">Make teams</.button>
@@ -49,14 +53,13 @@ defmodule TeamsortWeb.TeamsortLive do
 
       <!-- Teams output -->
       <section class="my-10">
-        <h1 class="text-2xl font-bold">Teams</h1>
-        <div class="block"><.button phx-click="shuffle">Shuffle</.button></div>
-        <div class="my-5 flex flex-wrap gap-4 md:gap-8 xl:gap-28">
-          <div :for={team <- @teams} class="">
-            <h3 class="text-xl font-bold"><%= team.name %></h3>
-            <span class="py-4 font-medium">Score: <%= team.score %></span>
+        <h1 class="text-2xl font-bold dark:text-zinc-200">Teams<.button class="ml-4" phx-click="shuffle">Shuffle</.button></h1>
+        <div class="my-5 flex flex-wrap flex-col md:flex-row gap-4 xl:gap-8">
+          <div :for={team <- @teams} class="px-10 md:px-5 xl:px-10 py-5 flex-1 min-w-fit rounded-md dark:bg-zinc-900">
+            <h3 class="text-xl font-bold dark:text-zinc-200"><%= team.name %></h3>
+            <span class="py-4 font-medium dark:text-zinc-200">Score: <%= team.score %></span>
             <ol class="list-decimal list-inside">
-              <li :for={player <- team.players}>
+              <li :for={player <- team.players} class="dark:text-zinc-200">
                 <%= player.name %>  <%= player.team %> <%= player.rank %>
               </li>
             </ol>
@@ -65,7 +68,9 @@ defmodule TeamsortWeb.TeamsortLive do
       </section>
 
       <!-- History -->
-      <pre>@history = <%= Jason.encode!(@players_history, pretty: true) %></pre>
+      <pre
+        class="dark:text-zinc-200 overflow-scroll p-5 bg-zinc-900 mb-10 rounded-md"
+        >@history = <%= Jason.encode!(@players_history, pretty: true) %></pre>
     </section>
     """
   end
