@@ -26,9 +26,9 @@ defmodule Teamsort.PlayerParserTest do
   end
 
   test "parses rank" do
-    assert parse("Player\tgnm\nPlayer2\tmg2") == [
+    assert parse("Player\tgnm\nPlayer2\tmg2\t1\t1") == [
              %Player{name: "Player", rank: "gnm"},
-             %Player{name: "Player2",  rank: "mg2"}
+             %Player{name: "Player2", rank: "mg2"}
            ]
   end
 
@@ -41,7 +41,7 @@ defmodule Teamsort.PlayerParserTest do
            Player\tgnm
            """) == [
              %Player{name: "Player", rank: "gnm"},
-             %Player{name: "Player1", rank: "gnm", team: 2,},
+             %Player{name: "Player1", rank: "gnm", team: 2},
              %Player{name: "Player2", rank: "mg2"},
              %Player{name: "Player3", rank: "gn4", team: 1},
              %Player{name: "Player", rank: "gnm"}
@@ -52,8 +52,7 @@ defmodule Teamsort.PlayerParserTest do
     assert parse("sandesh, glo\nbna, gn2\nPlayer3\t gn4\t1") == [
              %Player{name: "sandesh", rank: "glo"},
              %Player{name: "bna", rank: "gn2"},
-             %Player{name: "Player3", rank: "gn4", team: 1},
+             %Player{name: "Player3", rank: "gn4", team: 1}
            ]
-
   end
 end

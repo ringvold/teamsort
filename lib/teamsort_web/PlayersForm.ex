@@ -4,5 +4,4 @@ defmodule TeamsortWeb.PlayersForm do
   embedded_schema do
     field :players, :string, default: ""
   end
-
 end

@@ -23,7 +23,6 @@ defmodule Teamsort.DataCase do
   end
 
   setup _tags do
-
     :ok
   end
 

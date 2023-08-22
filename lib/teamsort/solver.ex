@@ -49,18 +49,4 @@ defmodule Teamsort.Solver do
     sum = Enum.map(players, &Teamsort.Player.rank_to_num(&1.rank)) |> Enum.sum()
     %Team{name: "Team #{number}", players: Enum.sort_by(players, & &1.rank, :desc), score: sum}
   end
-
-  def solve_raw do
-    ranks = [12, 11, 9, 8, 16, 7, 7, 4, 9, 4, 5, 17, 11, 14, 8]
-
-    MinizincSolver.solve_sync(
-      Path.join(:code.priv_dir(:teamsort), "model.mzn"),
-      %{
-        playerRanks: ranks,
-        preference: Enum.map(ranks, fn _ -> 0 end)
-      },
-      solver: "org.minizinc.mip.coin-bc"
-      # time_limit: 1000
-    )
-  end
 end

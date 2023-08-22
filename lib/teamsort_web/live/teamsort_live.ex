@@ -11,13 +11,14 @@ defmodule TeamsortWeb.TeamsortLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket
-      |> assign(:players, [])
-      |> assign(:players_raw, "")
-      |> assign(:teams, [])
-      |> assign(:players_history, [])
-      |> assign_form(%Ecto.Changeset{data: %PlayersForm{}})
-    }
+    {:ok,
+     socket
+     |> assign(:players, [])
+     |> assign(:players_raw, "")
+     |> assign(:teams, [])
+     |> assign(:players_history, [])
+     |> assign(:solving, false)
+     |> assign_form(%Ecto.Changeset{data: %PlayersForm{}})}
   end
 
   @impl true
@@ -25,52 +26,66 @@ defmodule TeamsortWeb.TeamsortLive do
     # TODO: Alternative layout where textarea is tall and narrow with teams on the side
     ~H"""
     <section class="form">
-      <.simple_form
-        for={ @form }
-        phx-submit="solve"
-        phx-change="change"
-        as="changeset"
-        autocomplete="off">
-
+      <.simple_form for={@form} phx-submit="solve" phx-change="change" autocomplete="off">
         <.button class="float-right mb-2" phx-click="fill_example">Use example data</.button>
 
         <.input
           field={@form[:players]}
           type="textarea"
           label="Players"
-          value={ @players_raw }
+          value={@players_raw}
           rows="10"
           cols="30"
           placeholder="Format:
-name, rank
-name, rank, team preference (number, 1-4)
-Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo"
+    name, rank
+    name, rank, team preference (number, 1-4)
+    Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg, le, lem, sup, glo"
         />
         <:actions>
           <.button phx-disable-with="Generating teams..">Make teams</.button>
         </:actions>
       </.simple_form>
-
-      <!-- Teams output -->
+      <!--
+        Teams output
+      -->
       <section class="my-10">
-        <h1 class="text-2xl font-bold dark:text-zinc-200">Teams<.button class="ml-4" phx-click="shuffle">Shuffle</.button></h1>
+        <h1 class="text-2xl font-bold dark:text-zinc-200">
+          Teams<.button class="ml-4" phx-click="shuffle" phx-disable-with="Shuffling..">
+            Shuffle
+          </.button>
+        </h1>
+
         <div class="my-5 flex flex-wrap flex-col md:flex-row gap-4 xl:gap-8">
-          <div :for={team <- @teams} class="px-10 md:px-5 xl:px-10 py-5 flex-1 min-w-fit rounded-md dark:bg-zinc-900">
-            <h3 class="text-xl font-bold dark:text-zinc-200"><%= team.name %></h3>
-            <span class="py-4 font-medium dark:text-zinc-200">Score: <%= team.score %></span>
-            <ol class="list-decimal list-inside">
-              <li :for={player <- team.players} class="dark:text-zinc-200">
-                <%= player.name %>  <%= player.team %> <%= player.rank %>
-              </li>
-            </ol>
-          </div>
+          <%= if @solving do %>
+            <h1 class="text-xl dark:text-zinc-200 p-5 bg-zinc-900 mb-10 rounded-md min-w-fit">
+              Generating teams..
+            </h1>
+          <% else %>
+            <%= if @teams != [] do %>
+              <div
+                :for={team <- @teams}
+                class="px-10 md:px-5 xl:px-10 py-5 flex-1 min-w-fit rounded-md dark:bg-zinc-900"
+              >
+                <h3 class="text-xl font-bold dark:text-zinc-200"><%= team.name %></h3>
+                <span class="py-4 font-medium dark:text-zinc-200">Score: <%= team.score %></span>
+                <ol class="list-decimal list-inside">
+                  <li :for={player <- team.players} class="dark:text-zinc-200">
+                    <%= player.name %> <%= player.team %> <%= player.rank %>
+                  </li>
+                </ol>
+              </div>
+            <% else %>
+              <p class="text-lg dark:text-zinc-200 p-5 bg-zinc-900 mb-10 rounded-md">
+                Generated teams will be displayed here :)
+              </p>
+            <% end %>
+          <% end %>
         </div>
       </section>
-
-      <!-- History -->
-      <pre
-        class="dark:text-zinc-200 overflow-scroll p-5 bg-zinc-900 mb-10 rounded-md"
-        >@history = <%= Jason.encode!(@players_history, pretty: true) %></pre>
+      <!--
+        History
+      -->
+      <pre class="dark:text-zinc-200 overflow-scroll p-5 bg-zinc-900 mb-10 rounded-md">@history = <%= Jason.encode!(@players_history, pretty: true) %></pre>
     </section>
     """
   end
@@ -91,25 +106,29 @@ Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg
         case parse_players(get_field(cset, :players)) do
           {:ok, players} ->
             {:noreply,
-              socket
-              |> assign(
+             socket
+             |> assign(
                players: players,
                players_raw: get_field(cset, :players)
              )
              |> assign_form(cset)}
 
           {:error, _error} ->
+            dbg _error
+            changeset =
+              add_error(cset, :players, "invalid input")
+              |> Map.put(:action, :validate)
+              |> dbg
+
             {:noreply,
-              socket
-                |> put_flash(:error, "Invalid input")
-                |> assign_form(add_error(cset, :players, "invalid input"))}
+             socket
+             |> assign_form(changeset)}
         end
 
       false ->
         {:noreply,
-          socket
-          |> assign_form(cset)
-        }
+         socket
+         |> assign_form(cset)}
     end
   end
 
@@ -117,41 +136,73 @@ Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg
   @impl true
   def handle_event("solve", %{"players_form" => form}, socket) do
     cset = changeset(%PlayersForm{}, form)
+    send(self(), {:solve, cset})
 
+    {:noreply,
+     socket
+     |> assign(:solving, true)}
+  end
+
+  def handle_info({:solve, cset}, socket) do
     if cset.valid? do
       case parse_players(get_field(cset, :players)) do
         {:ok, []} ->
           {:noreply,
-            socket
-              |> put_flash(:error, "could not be parsed")
-              |> assign_form(add_error(cset, :players, "could not be parsed"))
-          }
+           socket
+           |> put_flash(:error, "could not be parsed")
+           |> assign_form(add_error(cset, :players, "could not be parsed"))
+           |> assign(:solving, false)}
 
         {:ok, players} ->
           case Solver.solve(players) do
             {:ok, teams} ->
-              {:noreply, assign(socket, teams: teams)}
-
-            {:error, _error} ->
               {:noreply,
-                socket
-                  |> put_flash(:error, "Could not create teams")
-                  |> assign_form(add_error(cset, :players, "could not create teams"))
+               socket
+               |> assign(teams: teams)
+               |> assign(:solving, false)}
+
+            {:error, error} ->
+              changeset =
+                if String.contains?(error, [
+                     "Error: type error: undefined identifier",
+                     "did you mean"
+                   ]) do
+                  err =
+                    String.replace_leading(error, "Error: type error: undefined identifier", "")
+                    |> String.split("\n")
+                    |> List.first()
+                    |> dbg
+
+                  add_error(cset, :players, "invalid input. Unknown rank #{err}")
                   |> Map.put(:action, :validate)
-              }
+                else
+                  add_error(cset, :players, "invalid input")
+                  |> Map.put(:action, :validate)
+                end
+
+              {:noreply,
+               socket
+               |> assign_form(changeset)
+               |> assign(:solving, false)}
           end
 
-          # {:ok, teams} = Solver.solve(players)
-          # {:noreply, assign(socket, teams: teams)}
+        {:error, message} ->
+          dbg(message)
 
-        {:error, _message} ->
-          {:noreply, socket
-              |> put_flash(:error, "Could not parse player")
-              |> assign_form(add_error(cset, :players,"could not be parsed"))
-           }
+          changeset =
+            add_error(cset, :players, "could not be parsed")
+            |> Map.put(:action, :validate)
+
+          {:noreply,
+           socket
+           |> put_flash(:error, "Could not parse player")
+           |> assign_form(changeset)
+           |> assign(:solving, false)}
       end
     else
-      {:noreply, socket}
+      {:noreply,
+       socket
+       |> assign(:solving, false)}
     end
   end
 
@@ -172,13 +223,16 @@ Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg
 
             {:error, :unexpected} ->
               {:noreply, socket}
+
+            {:error, msg} ->
+              # TODO: extract type errors: {:error, "Error: type error: undefined identifier `mgg1', did you mean `mg1'?\n/private/var/folders/m3/v1_2c_1s3sbg1gt0_srtvq4r0000gn/T/tmp.scexpBMgU4.mzn:60.39-42\n"
+              {:noreply, socket |> put_flash(:error, msg)}
           end
 
         {:error, _error} ->
           {:noreply,
-            socket
-              |> assign_form(add_error(socket.assigns.changeset, :players,"could not be parsed"))
-          }
+           socket
+           |> put_flash(:error, "Could not parse shuffled players")}
       end
     else
       {:noreply, socket}
@@ -217,8 +271,7 @@ Valid ranks: ur, s1, s2, s3, s4, se, sem, gn1, gn2, gn3, gnm, mg1, mg2, mge, dmg
       |> unwrap
     rescue
       e in RuntimeError ->
-        IO.puts("ERROR")
-        IO.puts(e)
+        dbg(e)
         {:error, "Could not parse players. Got #{e}"}
     end
   end

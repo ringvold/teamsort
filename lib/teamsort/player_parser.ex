@@ -14,10 +14,9 @@ defmodule Teamsort.PlayerParser do
     |> ignore(string(" ") |> repeat() |> optional())
     |> utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(string("\t")|> repeat() |> optional())
-    |> ignore(string("\n")|> repeat() |> optional())
+    |> ignore(string("\t") |> repeat() |> optional())
+    |> ignore(string("\n") |> repeat() |> optional())
     |> reduce({:construct_player, []})
-
 
   with_team =
     utf8_string([{:not, comma}, {:not, tab}, {:not, new_line}], min: 1)
@@ -30,8 +29,8 @@ defmodule Teamsort.PlayerParser do
     |> ignore(string(" ") |> repeat() |> optional())
     |> integer(min: 1)
     |> ignore(string(" ") |> repeat() |> optional())
-    |> ignore(string("\t")|> repeat() |> optional())
-    |> ignore(string("\n")|> repeat() |> optional())
+    |> ignore(string("\t") |> repeat() |> optional())
+    |> ignore(string("\n") |> repeat() |> optional())
     |> reduce({:construct_player, []})
 
   defparsec(
@@ -51,7 +50,8 @@ defmodule Teamsort.PlayerParser do
       [name, rank] ->
         %Player{name: name, rank: rank}
 
-      _ ->
+      other ->
+        dbg other
         {:error, "Could not convert #{args} to player"}
     end
   end
