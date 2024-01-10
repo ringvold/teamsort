@@ -2,22 +2,20 @@ version: "3"
 
 services:
   web:
-    build: .
-    command: mix phx.server
-    # command: /bin/bash
-    # user: "${UID}:${GID}"
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    environment:
+      - PORT=4000
     volumes:
-      - .:/opt/app
-      # - build:/opt/app/_build
-      # - deps:/opt/app/deps
-      # - node_modules:/opt/app/assets/node_modules
+      - .:/home/elixir/app
+      - /home/elixir/app/_build/
+      - /home/elixir/app/deps/
     ports:
       - "4000:4000"
     stdin_open: true
     tty: true
 
 volumes:
-  db-data:
-  node_modules:
   build:
   deps:

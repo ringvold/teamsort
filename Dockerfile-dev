@@ -1,0 +1,35 @@
+# Fetch minizinc image so we can fetch precompiled version of minizinc
+FROM minizinc/minizinc:latest-jammy AS minizinc
+
+FROM elixir:1.16
+
+RUN apt-get update && \
+    apt-get install -y inotify-tools build-essential
+
+RUN mix local.hex --force && \
+    mix archive.install hex phx_new --force && \
+    mix local.rebar --force
+
+COPY --from=minizinc /usr/local/bin/minizinc /usr/local/bin/minizinc
+COPY --from=minizinc /usr/local/share/minizinc /usr/local/share/minizinc
+
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g "${GID}" elixir \
+  && useradd --create-home --no-log-init -u "${UID}" -g "${GID}" elixir
+
+USER elixir
+
+ENV APP_HOME /home/elixir/app
+WORKDIR $APP_HOME
+
+# Cache elixir deps
+ADD mix.exs mix.lock ./
+RUN mix do deps.get, deps.compile
+
+ENV PORT=4000
+ENV SHELL=/bin/bash HOST_NAME=localhost
+
+
+CMD ["mix", "phx.server"]
