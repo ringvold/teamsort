@@ -3,7 +3,7 @@ ARG OTP_VERSION=26.2.1
 ARG DEBIAN_VERSION=bullseye-20231009-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 
 ######
@@ -100,6 +100,6 @@ ENV SHELL=/bin/sh HOST_NAME=localhost
 ENV ECTO_IPV6 true
 ENV ERL_AFLAGS "-proto_dist inet6_tcp"
 
-CMD ["bin/teamsort", "start"]
+CMD ["/app/bin/server"]
 
 
