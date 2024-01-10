@@ -18,6 +18,7 @@ defmodule TeamsortWeb.TeamsortLive do
      |> assign(:teams, [])
      |> assign(:players_history, [])
      |> assign(:solving, false)
+     |> assign(:shuffling, false)
      |> assign_form(%Ecto.Changeset{data: %PlayersForm{}})}
   end
 
@@ -51,7 +52,11 @@ defmodule TeamsortWeb.TeamsortLive do
       <section class="my-10">
         <h1 class="text-2xl font-bold dark:text-zinc-200">
           Teams<.button class="ml-4" phx-click="shuffle" phx-disable-with="Shuffling..">
-            Shuffle
+            <%= if @shuffling do %>
+              Shuffling...
+            <% else %>
+              Shuffle
+            <% end %>
           </.button>
         </h1>
 
@@ -113,8 +118,9 @@ defmodule TeamsortWeb.TeamsortLive do
              )
              |> assign_form(cset)}
 
-          {:error, _error} ->
-            dbg _error
+          {:error, error} ->
+            dbg(error)
+
             changeset =
               add_error(cset, :players, "invalid input")
               |> Map.put(:action, :validate)
@@ -132,7 +138,6 @@ defmodule TeamsortWeb.TeamsortLive do
     end
   end
 
-  # TODO: Make async
   @impl true
   def handle_event("solve", %{"players_form" => form}, socket) do
     cset = changeset(%PlayersForm{}, form)
@@ -143,6 +148,40 @@ defmodule TeamsortWeb.TeamsortLive do
      |> assign(:solving, true)}
   end
 
+  @impl true
+  def handle_event("shuffle", _value, socket) do
+    send(self(), {:shuffle, socket.assigns.players_raw})
+
+    {:noreply,
+     socket
+     |> assign(:shuffling, true)}
+  end
+
+  def handle_event("fill_example", _value, socket) do
+    {:noreply,
+     assign(socket,
+       players_raw: """
+       antorn3dthe7th\ts2\t0
+       bna-cooky\ts3\t0
+       Buððah\tgn2\t0
+       Dinogutten\ts2\t0
+       eask64\tmg2\t0
+       l0lpalme\tmg1\t1
+       Madde\tmg1\t1
+       McDuckian\tmg1\t0
+       Miksern\tgn3\t0
+       Pokelot\tle\t0
+       SchousKanser\ts2\t0
+       Steffe\tmg1\t0
+       Ditlesen\tsup\t0
+       Jessie Maye\tse\t1
+       Igorrr\tdmg\t0
+       HVaade\tmge\t0
+       """
+     )}
+  end
+
+  @impl true
   def handle_info({:solve, cset}, socket) do
     if cset.valid? do
       case parse_players(get_field(cset, :players)) do
@@ -161,6 +200,16 @@ defmodule TeamsortWeb.TeamsortLive do
                |> assign(teams: teams)
                |> assign(:solving, false)}
 
+            {:error, :unexpected} ->
+              changeset =
+                add_error(cset, :players, "Unknown error")
+                |> Map.put(:action, :validate)
+
+              {:noreply,
+               socket
+               |> assign_form(changeset)
+               |> assign(:solving, false)}
+
             {:error, error} ->
               changeset =
                 if String.contains?(error, [
@@ -176,9 +225,11 @@ defmodule TeamsortWeb.TeamsortLive do
                   add_error(cset, :players, "invalid input. Unknown rank #{err}")
                   |> Map.put(:action, :validate)
                 else
-                  add_error(cset, :players, "invalid input")
+                  add_error(cset, :players, "Unkown error")
                   |> Map.put(:action, :validate)
                 end
+
+              dbg(error)
 
               {:noreply,
                socket
@@ -206,11 +257,10 @@ defmodule TeamsortWeb.TeamsortLive do
     end
   end
 
-  # TODO: Make async
   @impl true
-  def handle_event("shuffle", _value, socket) do
+  def handle_info({:shuffle, players_raw}, socket) do
     shuffled =
-      socket.assigns.players_raw |> String.split("\n") |> Enum.shuffle() |> Enum.join("\n")
+      players_raw |> String.split("\n", trim: true) |> Enum.shuffle() |> Enum.join("\n") |> dbg
 
     if shuffled != "" do
       updated_socket = update(socket, :players_history, &[shuffled | &1])
@@ -219,48 +269,28 @@ defmodule TeamsortWeb.TeamsortLive do
         {:ok, players} ->
           case Solver.solve(players) do
             {:ok, teams} ->
-              {:noreply, assign(updated_socket, players_raw: shuffled, teams: teams)}
+              {:noreply,
+               assign(updated_socket, players_raw: shuffled, teams: teams, shuffling: false)}
 
             {:error, :unexpected} ->
-              {:noreply, socket}
+              {:noreply, socket |> assign(:shuffling, false)}
 
             {:error, msg} ->
               # TODO: extract type errors: {:error, "Error: type error: undefined identifier `mgg1', did you mean `mg1'?\n/private/var/folders/m3/v1_2c_1s3sbg1gt0_srtvq4r0000gn/T/tmp.scexpBMgU4.mzn:60.39-42\n"
-              {:noreply, socket |> put_flash(:error, msg)}
+              {:noreply, socket |> assign(:shuffling, false) |> put_flash(:error, msg)}
           end
 
         {:error, _error} ->
+          dbg(_error)
+
           {:noreply,
            socket
+           |> assign(:shuffling, false)
            |> put_flash(:error, "Could not parse shuffled players")}
       end
     else
-      {:noreply, socket}
+      {:noreply, socket |> assign(:shuffling, false)}
     end
-  end
-
-  def handle_event("fill_example", _value, socket) do
-    {:noreply,
-     assign(socket,
-       players_raw: """
-       antorn3dthe7th\ts2\t0
-       bna-cooky\ts3\t0
-       Buððah\tgn2\t0
-       Dinogutten\ts2\t0
-       eask64\tmg2\t0
-       l0lpalme\tmg1\t1
-       Madde\tmg1\t1
-       McDuckian\tmg1\t0
-       Miksern\tgn3\t0
-       Pokelot\tle\t0
-       SchousKanser\ts2\t0
-       Steffe\tmg1\t0
-       Ditlesen\tsup\t0
-       Jessie Maye\tse\t1
-       Igorrr\tdmg\t0
-       HVaade\tmge\t0
-       """
-     )}
   end
 
   @spec parse_players(any) :: {:ok, [Player]} | {:error, String.t()}
