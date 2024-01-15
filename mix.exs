@@ -47,7 +47,7 @@ defmodule Teamsort.MixProject do
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.0"},
       {:solverl, ">= 1.0.0"},
-      {:nimble_parsec, "~> 1.3.1"}
+      {:nimble_parsec, "~> 1.4.0"}
     ]
   end
 
